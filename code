@@ -1,0 +1,274 @@
+/*----------------------------------------------------------------------------*/
+/*                                                                            */
+/*    Module:       main.cpp                                                  */
+/*    Author:       Mia :)                                                    */
+/*    Created:      Thu Dec 7 2023                                            */
+/*    Description:  Competition Template                                      */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+// ---- START VEXCODE CONFIGURED DEVICES ----
+// Robot Configuration:
+// [Name]               [Type]        [Port(s)]
+// Controller1          controller                    
+// Drivetrain           drivetrain    6, 2, 13, 9, 19 
+// Lift                 motor_group   10, 11          
+// Intake               motor         8               
+// Catapult             motor         16              
+// Potentiometer        pot           B               
+// RotationCata         rotation      3               
+// RotationLift         rotation      15              
+// Ratchet              digital_out   C               
+// Wings                digital_out   A               
+// Anchor               digital_out   D               
+// ---- END VEXCODE CONFIGURED DEVICES ----
+
+#include "vex.h"
+
+using namespace vex;
+
+// A global instance of competition
+competition Competition;
+//Functions for autonomous period:
+
+void stopall () { //stops all motors
+  Drivetrain.stop();
+  Intake.stop();
+  Catapult.stop();
+  Lift.stop();
+}
+
+void Forward (int velocity, double distance) { //makes robot move forwards, it uses the inertial sensor (gyroscope and accelerometer) for precise distance measure (inches)
+  Drivetrain.setDriveVelocity(velocity,pct);
+  Drivetrain.driveFor(forward,distance,inches);
+}
+
+void Reverse (int velocity, double distance) { //makes robot move backwards, it uses the inertial sensor (gyroscope and accelerometer) for precise distance measure (inches)
+  Drivetrain.setDriveVelocity(velocity,pct);
+  Drivetrain.driveFor(reverse,distance,inches);
+}
+
+void Right (int velocity, double angle) { //makes robot turn right, it uses the inertial sensor (gyroscope and accelerometer) for precise distance measure (degrees)
+  Drivetrain.setDriveVelocity(velocity,pct);
+  Drivetrain.turnFor(right,angle,deg);
+}
+
+void Left (int velocity, double angle) { //makes robot turn left, it uses the inertial sensor (gyroscope and accelerometer) for precise distance measure (degrees)
+  Drivetrain.setDriveVelocity(velocity,pct);
+  Drivetrain.turnFor(left,360-angle,deg);
+}
+
+void Drivestop () { //stops Drivetrain
+  Drivetrain.stop();
+}
+
+void takeIn (int velocity) { // Intake moves forwards, picks up the triballs
+  Intake.setVelocity(velocity,pct);
+  Intake.spin(forward);
+}
+
+void takeOut (int velocity) { // Intake moves in reverse, takes out the triballs
+  Intake.setVelocity(velocity,pct);
+  Intake.spin(reverse);
+}
+
+void instop() { //stops intake
+ Intake.stop();
+}
+
+void anchor_up () { //resets anchor to upwards position
+  Anchor.set(false);
+}
+
+void anchor_dwn () { //sets anchor down
+  Anchor.set(true);
+}
+
+void wings_open () { //activates wings
+  Wings.set(true);
+}
+
+void wings_close () { //de-activates wings
+  Wings.set(false);
+}
+
+void shoot () { //function to activate shooter for autonomous skills
+ Catapult.setVelocity(60,percent);
+ Catapult.spin(reverse);
+ wait(47,seconds);
+ Catapult.stop();
+}
+
+void Lift_up ()  { //for Autonomous Skills, lift will rise until halfway for shooting across the field
+  while (RotationLift.angle(deg) <= (50)) {
+    Lift.spin(forward);
+  }
+  Lift.stop();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Functions for the usercontrol/manual driving period//
+
+void Shooter () { //Usercontrol function for catapult
+  if (RotationCata.angle(deg) > (138) && Controller1.ButtonA.pressing()) {
+    Catapult.spin(vex::directionType::rev, 100,vex::velocityUnits::pct);
+  }
+
+  else if (RotationCata.angle(deg) > (235) && RotationCata.angle(deg) < (260)) {
+    Catapult.stop();
+  }
+}
+
+void LiftUp (){ //Usercontrol function for Lift to rise
+  while (Controller1.ButtonL1.pressing() && RotationLift.angle(deg) >= 0) {
+    Lift.spin(vex::directionType::fwd, 100,vex::velocityUnits::pct);
+  }
+
+ Lift.stop();
+}
+
+
+void LiftDown () { //Usercontrol function for lift to lower
+   while (Controller1.ButtonL2.pressing() && RotationLift.angle(deg) >=8.5 ) {
+    Lift.spin(vex::directionType::rev, 100,vex::velocityUnits::pct);
+  }
+
+ Lift.stop(); 
+}
+
+
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
+void autonomous(void) { //In here are all 15 sec and 1 minute autonomous periods
+  // ..........................................................................
+  // Insert autonomous user code here.
+  // ..........................................................................
+ if (Potentiometer.angle(degrees) < int(180) && Potentiometer.angle(degrees) > int(20)) { //15-sec autonomous, achieves win point and scores 2-6 pts.
+  anchor_dwn(); //sets down anchor to take out match load triball
+  wait(.5,sec);
+  Left(50,63); //takes out the triball
+  wait(1.7,sec);
+  Drivestop();
+  wait(.3,sec);
+  anchor_up(); //resets anchor
+  Right(30,180); //aligns to move towards elevation bars
+  wait(1,sec);
+  Drivestop();
+  Forward(30,17);
+  takeOut(100);//takes out alliance triball
+  Forward(30,24);
+  wait(.3,sec);
+  instop();
+  Drivestop(); //ends by touching elevation bars, pushes to alliance side of field: alliance triball, match-load zone triball and triball underneath elevation bars.
+ }
+
+  if (Potentiometer.angle(degrees)  > int (180)) { // 
+  Reverse(30,12);
+  wait(2,sec);
+  Drivestop();
+  Left(40,172);
+  takeOut(100);
+  wait(.9,sec);
+  Drivestop();
+  Reverse(20,28);
+  wait(.8,sec);
+  Drivestop();
+  anchor_dwn();
+  wait(.2,sec);
+  shoot();
+  }
+
+ if (Potentiometer.angle(degrees) > int(20)) { // 1 minute PROGRAMMING SKILLS: Achieved 101 pts. in competition (highest score in PR)
+   Lift_up(); //lift rises to the middle
+   Reverse(50,25);
+   Left(50,270);              
+   Reverse(50,25); //robot aligns to match load zone
+   anchor_dwn(); //robot anchors down on match load zone
+   wait(1,sec);
+   shoot(); //catapult is activated, all 44 triballs are shot
+   anchor_up(); //finished
+ }
+
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
+void usercontrol(void) {
+  // User control code here, inside the loop
+  Drivetrain.setDriveVelocity(100,percent); //sets overall velocity for drivetrain
+  Intake.setVelocity(100,percent); //sets overall velocity for intake
+  
+  while (1) {
+    Shooter(); //control to shoot
+    LiftUp(); //control for lift to rise
+    LiftDown(); //control to lower lift
+   
+   //Wings control activate
+   if (Controller1.ButtonRight.pressing() ) {
+     Wings.set(true);
+   }
+
+   //Wings control deactivate
+   if (Controller1.ButtonLeft.pressing()) {
+     Wings.set(false);
+   }
+
+      //Anchor control to go down
+   if (Controller1.ButtonUp.pressing()) {
+     Anchor.set(true);
+   }
+
+   //Anchor control to go up
+   if (Controller1.ButtonRight.pressing()) {
+     Anchor.set(false);
+   }
+
+  //Control to deactivate ratchet on lift
+   if (Controller1.ButtonX.pressing()) {
+     Ratchet.set(true);
+   }
+  
+
+  //Control to activate ratchet on lift
+   if (Controller1.ButtonY.pressing()) {
+     Ratchet.set(false);
+   }
+
+    // This is the main execution loop for the user control program.
+
+    // ........................................................................
+
+    wait(20, msec); // Sleep the task for a short amount of time to
+                    // prevent wasted resources.
+  }
+}
+
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+  // Set up callbacks for autonomous and driver control periods.
+  Competition.autonomous(autonomous);
+  Competition.drivercontrol(usercontrol);
+
+
+  // Prevent main from exiting with an infinite loop.
+  while (true) {
+    wait(100, msec);
+  }
+}
